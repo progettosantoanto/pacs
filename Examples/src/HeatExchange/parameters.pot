@@ -20,3 +20,9 @@ k=0.164
 hc=200.0e-6
 # Number of elements
 M=11
+# Name of the output file
+output="data.dat"
+# Output on the screen
+screen=0
+# Output on result.dat
+spreadsheet=1
