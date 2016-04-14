@@ -21,8 +21,10 @@ hc=200.0e-6
 # Number of elements
 M=11
 # Name of the output file
-output="result.dat"
+output="resultH1.dat"
 # Output on the screen
 screen=1
 # Output on result.dat
 spreadsheet=1
+# RNnorm
+norm=1

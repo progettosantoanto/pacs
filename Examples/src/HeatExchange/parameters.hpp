@@ -30,6 +30,8 @@ struct parameters
   int screen;
   //! Output on result.dat
   int spreadsheet;
+  //! Norm
+  int norm;
   //! Constructor takes default values
   parameters():
     itermax(1000000),
@@ -44,7 +46,8 @@ struct parameters
     M(100),
     output("result.dat"),
     screen (1),
-    spreadsheet (1)
+    spreadsheet (1),
+    norm (0)
   {}
 };
 //! Prints parameters

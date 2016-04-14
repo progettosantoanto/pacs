@@ -16,5 +16,6 @@ std::ostream & operator << (std::ostream & out,const parameters & p)
   out<<"output= "<<p.output<<"\n\n";
   out<<"screen= "<<p.screen<<"\n\n";
   out<<"spreadsheet= "<<p.spreadsheet<<"\n\n";
+  out<<"norm= "<<p.norm<<"\n\n";
   return out;
 }

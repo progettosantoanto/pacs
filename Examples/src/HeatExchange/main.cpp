@@ -44,7 +44,7 @@ int main(int argc, char** argv)
   // check if we want verbosity
   bool verbose=cl.search(1,"-v");
   // Get file with parameter values
-  string filename = cl.follow("parameters.pot","-p");
+  string filename = cl.follow("parametersRN.pot","-p");
   cout<<"Reading parameters from "<<filename<<std::endl;
   // read parameters
   const parameters param=readParameters(filename,verbose);
@@ -65,6 +65,7 @@ int main(int argc, char** argv)
   const auto& output=param.output; // Name of the output file
   const auto& screen=param.screen; // Output on the screen
   const auto& spreadsheet=param.spreadsheet; // Output on result.dat
+  const auto& norm=param.norm; // Boolean to choose the stopping norm
   
   //! Precomputed coefficient for adimensional form of equation
   const auto act=2.*(a1+a2)*hc*L*L/(k*a1*a2);
@@ -86,25 +87,63 @@ int main(int argc, char** argv)
   // Stopping criteria epsilon<=toler
   
   int iter=0;
+  double aux=0, auxold=0;
   double xnew, epsilon;
      do
-       { epsilon=0.;
-
-	 // first M-1 row of linear system
-         for(int m=1;m < M;m++)
-         {   
-	   xnew  = (theta[m-1]+theta[m+1])/(2.+h*h*act);
-	   epsilon += (xnew-theta[m])*(xnew-theta[m]);
-	   theta[m] = xnew;
-         }
-
-	 //Last row
-	 xnew = theta[M-1]; 
-	 epsilon += (xnew-theta[M])*(xnew-theta[M]);
-	 theta[M]=  xnew; 
-
-	 iter=iter+1;     
-       }while((sqrt(epsilon) > toler) && (iter < itermax) );
+       { 
+       	epsilon=0.;
+       	aux=0;
+       	auxold=0;
+       	switch (norm) 
+       	{
+       		default : //Rn norm
+       		{
+       			for(int m=1;m < M;m++)
+         		{   
+	   				xnew  = (theta[m-1]+theta[m+1])/(2.+h*h*act);
+	   				epsilon += (xnew-theta[m])*(xnew-theta[m]);
+	   				theta[m] = xnew;
+         		}
+	 			xnew = theta[M-1]; 
+	 			epsilon += (xnew-theta[M])*(xnew-theta[M]);
+	 			break;
+       		}
+       		case 1 : //H1 norm
+       		{
+       			for(int m=1;m < M;m++)
+         		{   
+	   				xnew  = (theta[m-1]+theta[m+1])/(2.+h*h*act);
+	   				aux = xnew - theta[m];
+	   				epsilon += h/6 * ( aux*aux + auxold*auxold + (aux+auxold)*(aux+auxold) );
+	   				epsilon += ( aux - auxold ) * ( aux - auxold ) / h;
+	   				auxold = aux;
+	   				theta[m] = xnew;
+         		}
+	 			xnew = theta[M-1]; 
+	 			aux = xnew-theta[M];
+	 			epsilon += h/6 * ( aux*aux + auxold*auxold + (aux+auxold)*(aux+auxold) );
+	 			epsilon += ( aux - auxold ) * ( aux - auxold ) / h;
+	 			break;
+       		}
+       		case 2 : //L2 norm
+       		{
+       			for(int m=1;m < M;m++)
+         		{   
+	   				xnew  = (theta[m-1]+theta[m+1])/(2.+h*h*act);
+	   				aux = xnew - theta[m];
+	   				epsilon += h/6 * ( aux*aux + auxold*auxold + (aux+auxold)*(aux+auxold) );
+	   				auxold = aux;
+	   				theta[m] = xnew;
+         		}
+	 			xnew = theta[M-1]; 
+	 			aux = xnew-theta[M];
+	 			epsilon += h/6 * ( aux*aux + auxold*auxold + (aux+auxold)*(aux+auxold) );
+	 			break;
+       		}
+       	}
+	  	theta[M]=  xnew;
+	 	iter=iter+1;     
+       } while((sqrt(epsilon) > toler) && (iter < itermax) );
 
     if(iter<itermax)
       cout << "M="<<M<<"  Convergence in "<<iter<<" iterations"<<endl;

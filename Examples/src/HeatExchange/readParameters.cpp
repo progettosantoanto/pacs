@@ -34,6 +34,7 @@ parameters readParameters(std::string const & filename,bool verbose)
   values.output=ifile("output",defaults.output.c_str());
   values.screen=ifile("screen",defaults.screen);
   values.spreadsheet=ifile("spreadsheet",defaults.spreadsheet);
+  values.norm=ifile("norm",defaults.norm);
 
   if(verbose)
     {
