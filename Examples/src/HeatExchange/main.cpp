@@ -15,12 +15,8 @@
     
     **************************************************
     Linear finite elements
-    Iterative resolution by Gauss Siedel.
+    Direct resolution by Thomas.
     **************************************************
-    
-    Example adapted by Luca Formaggia from  a code found in 
-    "Simulation numerique an C++" di I. Danaila, F. Hecht e
-    O. Pironneau.
 */
 //! helper function
 void printHelp()
@@ -44,15 +40,13 @@ int main(int argc, char** argv)
   // check if we want verbosity
   bool verbose=cl.search(1,"-v");
   // Get file with parameter values
-  string filename = cl.follow("parametersRN.pot","-p");
+  string filename = cl.follow("parameters.pot","-p");
   cout<<"Reading parameters from "<<filename<<std::endl;
   // read parameters
   const parameters param=readParameters(filename,verbose);
   // Transfer parameters to local variables
   // I use references to save memory (not really an issue here, it is just
   // to show a possible  use of references)
-  const int&    itermax= param.itermax;   //max number of iteration for Gauss-Siedel
-  const double& toler=param.toler;   // Tolerance for stopping criterion
   // Here I use auto (remember that you need const and & if you want constant references)
   const auto& L= param.L;  // Bar length
   const auto& a1=param.a1; // First longitudinal dimension
@@ -65,7 +59,6 @@ int main(int argc, char** argv)
   const auto& output=param.output; // Name of the output file
   const auto& screen=param.screen; // Output on the screen
   const auto& spreadsheet=param.spreadsheet; // Output on result.dat
-  const auto& norm=param.norm; // Boolean to choose the stopping norm
   
   //! Precomputed coefficient for adimensional form of equation
   const auto act=2.*(a1+a2)*hc*L*L/(k*a1*a2);
@@ -74,99 +67,51 @@ int main(int argc, char** argv)
   const auto h=1./M;
   
   // Solution vector
-  std::vector<double> theta(M+1);
-  
-  // Gauss Siedel is initialised with a linear variation
-  // of T
-  
-  for(unsigned int m=0;m <= M;++m)
-     theta[m]=(1.-m*h)*(To-Te)/Te;
-  
-  // Gauss-Seidel
-  // epsilon=||x^{k+1}-x^{k}||
-  // Stopping criteria epsilon<=toler
-  
-  int iter=0;
-  double aux=0, auxold=0;
-  double xnew, epsilon;
-     do
-       { 
-       	epsilon=0.;
-       	aux=0;
-       	auxold=0;
-       	switch (norm) 
-       	{
-       		default : //Rn norm
-       		{
-       			for(int m=1;m < M;m++)
-         		{   
-	   				xnew  = (theta[m-1]+theta[m+1])/(2.+h*h*act);
-	   				epsilon += (xnew-theta[m])*(xnew-theta[m]);
-	   				theta[m] = xnew;
-         		}
-	 			xnew = theta[M-1]; 
-	 			epsilon += (xnew-theta[M])*(xnew-theta[M]);
-	 			break;
-       		}
-       		case 1 : //H1 norm
-       		{
-       			for(int m=1;m < M;m++)
-         		{   
-	   				xnew  = (theta[m-1]+theta[m+1])/(2.+h*h*act);
-	   				aux = xnew - theta[m];
-	   				epsilon += h/6 * ( aux*aux + auxold*auxold + (aux+auxold)*(aux+auxold) );
-	   				epsilon += ( aux - auxold ) * ( aux - auxold ) / h;
-	   				auxold = aux;
-	   				theta[m] = xnew;
-         		}
-	 			xnew = theta[M-1]; 
-	 			aux = xnew-theta[M];
-	 			epsilon += h/6 * ( aux*aux + auxold*auxold + (aux+auxold)*(aux+auxold) );
-	 			epsilon += ( aux - auxold ) * ( aux - auxold ) / h;
-	 			break;
-       		}
-       		case 2 : //L2 norm
-       		{
-       			for(int m=1;m < M;m++)
-         		{   
-	   				xnew  = (theta[m-1]+theta[m+1])/(2.+h*h*act);
-	   				aux = xnew - theta[m];
-	   				epsilon += h/6 * ( aux*aux + auxold*auxold + (aux+auxold)*(aux+auxold) );
-	   				auxold = aux;
-	   				theta[m] = xnew;
-         		}
-	 			xnew = theta[M-1]; 
-	 			aux = xnew-theta[M];
-	 			epsilon += h/6 * ( aux*aux + auxold*auxold + (aux+auxold)*(aux+auxold) );
-	 			break;
-       		}
-       	}
-	  	theta[M]=  xnew;
-	 	iter=iter+1;     
-       } while((sqrt(epsilon) > toler) && (iter < itermax) );
+  vector<double> theta(M+1);
 
-    if(iter<itermax)
-      cout << "M="<<M<<"  Convergence in "<<iter<<" iterations"<<endl;
-    else
-      {
-	cerr << "NOT CONVERGING in "<<itermax<<" iterations "<<
-	  "||dx||="<<sqrt(epsilon)<<endl;
-	status=1;
-      }
+  // Dirichlet condition
+  theta[0] = (To-Te)/Te;
+
+  // Initializing memory requested for Thomas algorithm
+  vector<double> alpha(M);
+  vector<double> beta(M-1);
+  vector<double> gamma(M-1);
+
+  // LU factorization
+  alpha[0] = 2 + h*h*act;
+  for (unsigned int i=0; i<M-1; i++)
+  {
+  	beta[i] = -1./alpha[i];
+  	gamma[i] = -1;
+  	alpha[i+1] = 2 + h*h*act - beta[i]*gamma[i];
+  }
+  alpha[M-1] = alpha[M-1] - 1 - h*h*act;
+
+  vector<double> y(M); //forward substitutions
+  y[0] = (To-Te)/Te;
+  for (unsigned int i=0; i<M-1; i++)
+  {
+  	y[i+1] = -beta[i]*y[i];
+  }
+  theta[M] = y[M-1]/alpha[M-1];
+  for (unsigned int i=M-1; i>0; i--)
+  {
+  	theta[i] = ( y[i-1] - gamma[i-1]*theta[i+1] ) / alpha[i-1];
+  }  
 
  // Analitic solution
 
     vector<double> thetaa(M+1);
-     for(int m=0;m <= M;m++) {
+     for(int m=0; m<= M; m++) {
        thetaa[m]=Te+(To-Te)*cosh(sqrt(act)*(1-m*h))/cosh(sqrt(act));
      }
 
      // writing results with format
      // x_i u_h(x_i) u(x_i) and lauch gnuplot 
 
-     std::vector<double> coor(M+1);
-     std::vector<double> sol(M+1);
-     std::vector<double> exact(M+1);
+     vector<double> coor(M+1);
+     vector<double> sol(M+1);
+     vector<double> exact(M+1);
      for(int m = 0; m <= M; m++) 
      {
  		std::tie(coor[m],sol[m],exact[m])=

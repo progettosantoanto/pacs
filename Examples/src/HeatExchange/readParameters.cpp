@@ -21,8 +21,6 @@ parameters readParameters(std::string const & filename,bool verbose)
   GetPot ifile(filename.c_str());
   parameters values;
   // Read parameters from getpot ddata base
-  values.itermax=ifile("itermax",defaults.itermax);
-  values.toler=ifile("toler",defaults.toler);
   values.L=ifile("L",defaults.L);
   values.a1=ifile("a1",defaults.a1);
   values.a2=ifile("a2",defaults.a2);
@@ -34,7 +32,6 @@ parameters readParameters(std::string const & filename,bool verbose)
   values.output=ifile("output",defaults.output.c_str());
   values.screen=ifile("screen",defaults.screen);
   values.spreadsheet=ifile("spreadsheet",defaults.spreadsheet);
-  values.norm=ifile("norm",defaults.norm);
 
   if(verbose)
     {

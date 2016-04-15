@@ -1,9 +1,5 @@
 # Max number of grid elements
 MMAX=501
-# max number of iteration for Gauss-Siedel
-itermax=1000000
-# Tolerance for stopping criterion
-toler=1.0e-8
 # Bar length
 L=40.
 # First longitudinal dimension

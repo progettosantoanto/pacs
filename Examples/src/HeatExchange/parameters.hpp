@@ -4,10 +4,6 @@
 #include <string>
 struct parameters
 {
-  //! max number of iteration for Gauss-Siedel
-  int   itermax;
-  //! Tolerance for stopping criterion
-  double  toler;
   //! Bar length
    double L;
   //! First longitudinal dimension
@@ -30,12 +26,8 @@ struct parameters
   int screen;
   //! Output on result.dat
   int spreadsheet;
-  //! Norm
-  int norm;
   //! Constructor takes default values
   parameters():
-    itermax(1000000),
-    toler(1e-8),
     L(40.),
     a1(4.),
     a2(50.),
@@ -46,8 +38,7 @@ struct parameters
     M(100),
     output("result.dat"),
     screen (1),
-    spreadsheet (1),
-    norm (0)
+    spreadsheet (1)
   {}
 };
 //! Prints parameters
