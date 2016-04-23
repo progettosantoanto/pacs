@@ -1,5 +1,4 @@
 #include "Grid.hpp"
-#include <string>
 
 using namespace Geometry;
 using namespace std;
