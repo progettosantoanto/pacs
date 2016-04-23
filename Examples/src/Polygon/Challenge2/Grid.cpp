@@ -9,14 +9,15 @@ Grid::Grid (ifstream & file)
 	//leggo la prima riga
 	string str1, str2, aux;
 	int tipo;
-	unsigned int Npoly(0), Nvert(0);
+	unsigned int Npoly{0}, Nvert{0};
 	getline (file,aux);
-	stringstream ss (aux);
+	stringstream ss {aux};
 	getline (ss,str1,' ');
 	Nvert = stoi(str1);
 	getline (ss,str2,' ');
 	Npoly = stoi(str2);
-	Vect.resize (Nvert);
+	Vect.reserve (Nvert);
+	AbstractPol.reserve (Npoly);
 
 	//leggo le altre righe
 	for (unsigned int i=0; i<Nvert; i++)
@@ -60,7 +61,7 @@ Grid::Grid (ifstream & file)
 
 void Grid::getArea()
 {
-	double area(0);
+	double area{0};
 	for (auto i=0; i<AbstractPol.size(); i++)
 	{
 		area += AbstractPol[i]->area();
